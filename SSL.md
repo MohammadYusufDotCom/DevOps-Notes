@@ -5,5 +5,5 @@ openssl s_client -connect <your domain>:<port> -showcerts
 
 ## how to check detail of the cert of the file 
 ```
-openssl s_client -connect lla-dev.finnomo.com:8448 -showcerts
+ openssl x509 -in /etc/nginx/certificates/finnomo_com.crt -text -noout
 ```
