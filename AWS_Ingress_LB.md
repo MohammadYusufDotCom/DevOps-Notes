@@ -1,4 +1,4 @@
-## How to install nginx ingress congtroller in aws and connect with existing load balancer
+![image](https://github.com/user-attachments/assets/2f6d39a6-d72b-473f-b080-31bb75e29ddd)![image](https://github.com/user-attachments/assets/bcb750a5-02bb-4934-b4aa-b176947b900b)## How to install nginx ingress congtroller in aws and connect with existing load balancer
 
 ## Pre-requisite-1: Create EKS Cluster and Worker Nodes (if not created).
 ```t
@@ -73,5 +73,11 @@ controller:
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     type: LoadBalancer
+```
+*Note:* also add below tags to your existing load balancer
+```
+elbv2.k8s.aws/cluster: <cluster name>
+service.k8s.aws/resource: LoadBalancer
+service.k8s.aws/stack: ingress/ingress-nginx-controtler
 ```
 
