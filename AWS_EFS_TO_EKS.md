@@ -1,4 +1,20 @@
-## Storage class for EFS
+# How to attach EFS volume to EKS pod 
+
+## Step 1: need to create EFS volume on aws console and copy the file ssystem id
+```t
+# in our case this is fs-00250b9e8fc26e750 we have mention in pv
+
+```
+## Step 2: Attach the EFS IAM policy to EKS node group role
+```
+# below is the amazon managed policy
+AmazonEFSCSIDriverPolicy
+```
+## step 3: Install the EFS SCI driver from aws add-on (EKS aws console)
+
+## step 4: Aplly the following menifest
+
+### Storage class for EFS
 ```
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -10,7 +26,7 @@ volumeBindingMode: Immediate
 
 ```
 
-## Persist volume claim for EFS
+### Persist volume claim for EFS
 ```
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -29,7 +45,7 @@ spec:
 
 ```
 
-## persist volume menefest for EFS
+### persist volume menefest for EFS
 
 ```
 apiVersion: v1
