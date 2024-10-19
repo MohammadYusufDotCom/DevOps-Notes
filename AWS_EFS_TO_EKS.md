@@ -1,6 +1,7 @@
 # How to attach EFS volume to EKS pod 
 
 ## Step 1: need to create EFS volume on aws console and copy the file ssystem id
+  - also create the access point to each volume
 ```t
 # in our case this is fs-00250b9e8fc26e750 we have mention in pv
 
@@ -62,7 +63,7 @@ spec:
   storageClassName: efs-sc
   csi:
     driver: efs.csi.aws.com
-    volumeHandle: fs-00250b9e8fc26e750
+    volumeHandle: fs-00250b9e8fc26e750:/
   claimRef:
     kind: PersistentVolumeClaim
     namespace: production
