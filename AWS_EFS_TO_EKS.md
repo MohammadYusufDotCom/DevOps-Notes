@@ -45,7 +45,7 @@ spec:
 
 ```
 
-### persist volume menefest for EFS
+### persist volume menifest for EFS
 
 ```
 apiVersion: v1
