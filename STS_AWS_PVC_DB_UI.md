@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+```apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: dbeaver
@@ -47,3 +47,4 @@ spec:
         resources:
           requests:
             storage: 1Gi
+```
