@@ -36,7 +36,20 @@ export VAULT-TOKEN="$(vault token create -field token --policy=<my-policy>)"
 # To create token with 2 years of period
 vault token create -field=token -policy=lla-dev -ttl=8760h -max-ttl=17520h
 ```
+*Note:*
+ - for making a token validate longer you need to change vault default configureation
+   ```t
+   # Make these changes for increasing vault token life cycle (/etc/vault.d/vault.hcl)
+   max_lease_ttl = "9000h"
+   default_lease_ttl = "9000h"
 
+   # add below line for loging 
+   log_level = "trace"
+   log_format = "standard"
+   log_file = "/var/log/vault/"
+   log_rotate_duration="24h"
+   log_rotate_max_files=0
+   ```
 *how to start vault in production:*
 ```
 /user/bin/vault server -config=/etc/vault.d/vault.hcl
