@@ -34,7 +34,11 @@ vault policy delete <my-policy-name>
 export VAULT-TOKEN="$(vault token create -field token --policy=<my-policy>)"
 
 # To create token with 2 years of period
-vault token create -field=token -policy=lla-dev -ttl=8760h -max-ttl=17520h
+vault token create -field=token -policy=<pilicy> -ttl=8760h -max-ttl=17520h
+
+#if already config define 
+vault token create -policy=<policy>
+
 ```
 *Note:*
  - for making a token validate longer you need to change vault default configureation
