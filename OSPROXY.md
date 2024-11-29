@@ -2,7 +2,7 @@
 
 ### Open the terminal on 192.168.1.7 and add the following lines to your /etc/environment file:
 ```
-sudo nano /etc/environment
+sudo vim /etc/environment
 ```
 ### Add the following lines at the end of the file:
 ```
@@ -22,7 +22,7 @@ source /etc/environment
 ### Set Proxy for YUM/DNF (CentOS):
 
 ```
-sudo nano /etc/yum.conf
+sudo vim /etc/yum.conf
 ```
 Add the following lines to the file:
 ```
