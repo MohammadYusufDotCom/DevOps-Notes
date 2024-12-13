@@ -1,4 +1,4 @@
-# to check the expiry of cert 
+# How To check the expiry of cert and Renew all the kubeadm cert
 
 ### To check the certificate expiry 
 ```t
