@@ -81,3 +81,18 @@ service.k8s.aws/resource: LoadBalancer
 service.k8s.aws/stack: ingress/ingress-nginx-controtler
 ```
 
+## Addtional data you can use while installing ingress controller with AWS SSL 
+```t
+## Pass these vaules during the helm installation part as ==> -f value2.yaml
+## this is file is for public ALB and with certificate
+
+controller:
+  service:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:339713103209:certificate/a6bb7576-3b17-4ae6-934d-fe8196af34a3
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+    type: LoadBalancer
+```
