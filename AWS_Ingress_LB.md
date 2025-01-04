@@ -1,4 +1,4 @@
-## How to install nginx ingress congtroller in aws and connect with existing load balancer
+## How to install nginx ingress congtroller in aws and connect with existing Network load balancer
 
 ## Pre-requisite-1: Create EKS Cluster and Worker Nodes (if not created).
 ```t
