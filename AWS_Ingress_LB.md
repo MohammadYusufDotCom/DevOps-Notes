@@ -64,7 +64,7 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm -n ingress install ingress-nginx ingress-nginx/ingress-nginx -f values.yaml
 ```
-- values.yaml file file content
+- values.yaml File Content
 ```
 controller:
   service:
