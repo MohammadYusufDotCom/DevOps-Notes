@@ -48,7 +48,7 @@ spec:
 
 ### persist volume menifest for EFS
 
-```
+```t
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -63,7 +63,7 @@ spec:
   storageClassName: efs-sc
   csi:
     driver: efs.csi.aws.com
-    volumeHandle: fs-00250b9e8fc26e750:/
+    volumeHandle: fs-00250b9e8fc26e750:/   #that id we have copied in the step 1
   claimRef:
     kind: PersistentVolumeClaim
     namespace: production
