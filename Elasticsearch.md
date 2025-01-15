@@ -46,10 +46,10 @@ curl -X DELETE -u my_secure_user:your_user_password "https://localhost:9200/.sec
 To list all indices in your Elasticsearch cluster, you can use the following curl command:
 ```t
 #for listing index
-curl -X GET -u elastic:your_password "https://localhost:9200/_cat/indices?v" --insecure
+curl -X GET -u elastic:<your_password> "https://localhost:9200/_cat/indices?v" --insecure
 
 # for deleting the desired indices
-curl -X DELETE -u elasticsearch:your_password "https://localhost:9200/<indices name that you want to delete> -K"
+curl -X DELETE -u elasticsearch:<your_password> "https://localhost:9200/<indices name that you want to delete> -K"
 
 #for list the shards
 curl -X GET -u elastic:your_password "https://localhost:9200/_cat/shards?v" --insecure
