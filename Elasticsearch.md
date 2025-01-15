@@ -35,12 +35,12 @@ curl -X POST -H "Content-Type: application/json" -u elastic:your_password "https
   - Read-only Index: Make sure the index isn’t set to read-only mode.
   - You can check the settings of the index using:
   ```
-  curl -X GET -u my_secure_user:your_user_password "https://localhost:9200/.security-7/_settings"
+  curl -X GET -u my_secure_user:<your_user_password> "https://localhost:9200/.security-7/_settings"
   ```
 ## Example Deletion Command
 Ensure you're using the following command correctly to delete the index (replace .security-7 with the actual index name):
 ```
-curl -X DELETE -u my_secure_user:your_user_password "https://localhost:9200/.security-7"
+curl -X DELETE -u my_secure_user:<your_user_password> "https://localhost:9200/.security-7"
 ```
 ### List index and All Shards
 To list all indices in your Elasticsearch cluster, you can use the following curl command:
