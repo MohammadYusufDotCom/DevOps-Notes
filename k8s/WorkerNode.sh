@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -e "################## CHECKING STATUS OF FIREWALL AND STOPPING ###############"
+echo -e "###################################### CHECKING STATUS OF FIREWALL AND STOPPING ##############################################\n"
 
 if systemctl is-active --quiet firewalld; then
     echo -e "turning off firewall"
@@ -18,14 +18,14 @@ else
     sleep 2;
 fi
 
-echo -e "########################################### DISABLING SWAP  ######################################################"
+echo -e "\n############################################# DISABLING SWAP  ############################################################\n"
 
 swapoff -a
 sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
 sleep 1;
 
-echo -e "########################################### Forwarding IPv4 and letting iptables see bridged traffic ############"
+echo -e "\n########################################### Forwarding IPv4 and letting iptables see bridged traffic ####################\n"
 
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
@@ -60,7 +60,7 @@ while true; do
     read -p "Do you want to continue to install containerd? (yes/no): " INPUT
     case $INPUT in 
         [yY]* )
-            echo -e "########################################### INSTALLING CONTAINERD ##################################################"
+            echo -e "########################################### INSTALLING CONTAINERD #####################################################"
             curl -LO https://github.com/containerd/containerd/releases/download/v2.0.0/containerd-2.0.0-linux-amd64.tar.gz
             sleep 6;
             sudo tar Cxzvf /usr/local containerd-2.0.0-linux-amd64.tar.gz
@@ -79,10 +79,10 @@ while true; do
             if systemctl is-active --quiet containerd; then
                 # sudo systemctl status containerd
                 sleep 1;
-                echo -e "\n########################################### CONTAINERD INSTALLED SUCCUSSFULLY!!!! ###############################################" 
+                echo -e "\n########################################### CONTAINERD INSTALLED SUCCUSSFULLY!!!! #################################################" 
             else
                 echo "ooppps.... something went wrong please check and verify."
-                echo -e "\n###########*************************************** EXITING ********************************###########"
+                echo -e "\n###########*************************************** EXITING ***********************************###########"
                 exit 1;
             fi 
 
@@ -90,18 +90,18 @@ while true; do
                 read -p "Do you want to continue to install runc? (yes/no): " INPUTFORRUNC
                 case $INPUTFORRUNC in 
                     [yY]* )
-                        echo -e "\n########################################### INSTALLING RUNC ###############################\n"
+                        echo -e "\n########################################### INSTALLING RUNC ################################################\n"
                         curl -LO https://github.com/opencontainers/runc/releases/download/v1.2.4/runc.amd64
                         sleep 3;
                         sudo install -m 755 runc.amd64 /usr/local/sbin/runc
                         echo 'export PATH="$PATH:/usr/local/sbin"' >> ~/.bashrc
-                        echo -e "\n########################################### RUNC INSTALLED SUCCUSSFULLY ##################\n"
+                        echo -e "\n########################################### RUNC INSTALLED SUCCUSSFULLY ###################################\n"
 
                         while true; do 
                             read -p "Do you want to continue to install Kubelet, kubeadm? (yes/no): " INPUTFORKUBE
                             case $INPUTFORKUBE in
                                 [yY]* )
-                                    echo -e "\n########################################### INSTALLING KUBEADM KUBELET AND KUBECTL ##########################\n"
+                                    echo -e "\n########################################### INSTALLING KUBEADM KUBELET AND KUBECTL ##############################\n"
                                     sudo setenforce 0
                                     sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
                                     cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
