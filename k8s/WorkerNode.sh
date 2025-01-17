@@ -153,7 +153,9 @@ EOF
             ;;
     esac
 done
-    
+
+This are for making control plane node
+
 # curl https://raw.githubusercontent.com/projectcalico/calico/v3.29.1/manifests/calico.yaml -O
 # kubectl apply -f calico.yaml
 
