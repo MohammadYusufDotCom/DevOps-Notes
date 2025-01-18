@@ -116,6 +116,7 @@ EOF
                                     sleep 1; 
                                     sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
                                     sudo systemctl enable --now kubelet
+                                    sudo crictl config runtime-endpoint unix:///var/run/containerd/containerd.sock
                                     echo -e "\n############################################ YOUR KUBERNETES WORKER NODE IS READY #############################################"
                                     echo -e "\n##################################################### AUTHER MOHAMMAD YUSUF ###################################################"
                                     echo -e "\n###########********************************************** THANK YOU!!!! ********************************************###########\n"
