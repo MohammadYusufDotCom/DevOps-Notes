@@ -108,13 +108,13 @@ openssl s_client -connect 10.94.163.97:443 -showcerts
 ```
 openssl s_client -connect 10.94.148.76:443 2>/dev/null | openssl x509 -noout -dates
 ```
-#Output of all should be same
+# Output of all should be same
 
 To extract the TLS versions & CIPHERS of a SSL configured website for audit/fixes verifications.
 ```
 nmap -sV --script ssl-enum-ciphers -p 443 10.94.163.97
 ```
-#If firewall/any restricted use below command
+# If firewall/any restricted use below command
 ```
 nmap -sV --script +ssl-enum-ciphers -p 443 10.94.163.97
 ```
@@ -231,7 +231,7 @@ openssl s_client -connect 10.94.137.212:6271 < /dev/null 2>/dev/null | openssl x
 ```
 keytool -v -list -keystore <cacert file path> -storepass changeit -alias <alias-name>|grep SHA1
 ```
-#For a crt
+# For a crt
 ```
 openssl x509 -fingerprint -noout -in example.crt
 ```
