@@ -17,7 +17,7 @@ Environment="HTTP_PROXY=http://<prooxy-server-ip>:3128/"
 Environment="HTTPS_PROXY=http://<prooxy-server-ip>:3128/"
 Environment="NO_PROXY=localhost,127.0.0.1"
 ```
-note: <prooxy-server-ip> is ip of the server on which the squid isconfigure and 3128 (default) is port of squid 
+Note: <prooxy-server-ip> is ip of the server on which the squid isconfigure and 3128 (default) is port of squid 
 
 -> If the Squid proxy uses authentication (username and password), update the configuration as.
 ```
@@ -28,5 +28,5 @@ Environment="HTTPS_PROXY=http://<username>:<password>@<prooxy-server-ip>:3128/"
 -> Reload systemd to recognize the new configuration and restart docker service.
 ```
 sudo systemctl daemon-reload
-sudo systemctl restart docker
+sudo systemctl reload docker
 ```
