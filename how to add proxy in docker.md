@@ -1,4 +1,4 @@
-# how to add squid proxy in docker 
+# How to add squid proxy in docker 
 
 ### Step 1: Configure Docker to Use the Proxy
 -> Create or edit Docker's systemd service drop-in directory to set proxy settings.
