@@ -8,10 +8,13 @@ openssl s_client -connect <your domain>:<port> -showcerts
  openssl x509 -in /etc/nginx/certificates/ca.crt -text -noout
 ```
 
-## how to get public key from domain 
+## How to get public key from domain 
 ```t
 openssl s_client -connect mobilemoney-awsprod.payless.africa:8443 -showcerts < /dev/null 2>/dev/null | openssl x509 -pubkey -noout > public_key.pem
- # if you want to encode 
+ # If you want to encode this file
+cat public_key.pem | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+
+ # if you want to encode directly from the file
 openssl x509 -in <your_crt_file>.crt -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
 ```
 cd /home/ussdaps/Install-Client-Certificate-In-Java
