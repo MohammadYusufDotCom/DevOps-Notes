@@ -7,7 +7,7 @@ sudo mkdir -p /etc/systemd/system/docker.service.d
 ```
 -> Create a file for Docker's proxy settings.
 ```
-sudo vi /etc/systemd/system/docker.service.d/http-proxy.conf
+sudo vim /etc/systemd/system/docker.service.d/http-proxy.conf
 ```
 
 -> Add the following content to configure the proxy for Docker.
