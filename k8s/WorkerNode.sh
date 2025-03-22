@@ -158,7 +158,7 @@ done
 #This are for making control plane node run three line before  init kubeadm command. optinal.
 #curl -LO https://github.com/containernetworking/plugins/releases/download/v1.5.0/cni-plugins-linux-amd64-v1.5.0.tgz
 #sudo mkdir -p /opt/cni/bin
-# cni-plugins-linux-amd64-v1.6.2.tgz
+# sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.5.0.tgz
 
 # run below command after init kubeadm. mandatory 
 # curl https://raw.githubusercontent.com/projectcalico/calico/v3.29.1/manifests/calico.yaml -O
