@@ -13,8 +13,8 @@ global_defs {
 vrrp_instance RH_1 {
     state MASTER                    ## role of this server 
     interface enp1s0                ## NCI name on which it is connected
-    virtual_router_id 50            ## Id that used for join other system (must be same across all the node)
-    priority 99                     ## the higher the prioprity the more chance to get selected for master ROLE if
+    virtual_router_id 50            ## Id that used for join other system (must be same across all the node) 
+    priority 99                     ## the higher the prioprity the more chance to get selected for master ROLE (must be highest for master lower for slave)
     advert_int 1                    ## check intervel secondes for for master and and worked if master goes down OR comes up
     unicast_src_ip 172.16.210.59    # IP address of Master Server
     unicast_peer {
