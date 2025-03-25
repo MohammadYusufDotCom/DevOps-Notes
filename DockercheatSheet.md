@@ -12,3 +12,13 @@ docker run -u 0 --privileged --name jenkinstest1 -it -d -p 8090:8080 -p 50000:50
 -v jenkinsvol:/var/jenkins_home \
 jenkins/jenkins
 ```
+
+## How to save and load images 
+```t
+# docker
+docker save -o xxx.tar $imageList
+docker load -i  xxx.tar
+# containerd
+ctr -n=k8s.io image export  xxx.tar  $imageList
+ctr -n=k8s.io image import  xxx.tar
+```
