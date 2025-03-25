@@ -1,8 +1,8 @@
-## remove container logs
+## Remove container logs
 ```
 sudo find /var/lib/docker/containers/ -name *-json.log -exec truncate -s 0 {} \;
 ```
-## how to run container as root user or non root user
+## How to run container as root user or non root user
 ```
 docker run -u 0 --privileged --name jenkinstest1 -it -d -p 8090:8080 -p 50000:50000 \
 -v /var/run/docker.sock:/var/run/docker.sock \
