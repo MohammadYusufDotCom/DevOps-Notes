@@ -26,7 +26,7 @@ Prerequisites & Guidelines
 * Centralized NIS/LDAP configured. (Optional)
 
 CIS-Compliant Mandatories Partitioning Scheme for Kubernetes Nodes
-
+```
 Partition  | master- Node (Control Plane) | worker- Node | Mount Options
 /      (root)        50GB                   100GB      defaults
 /boot                2GB                    2GB        defaults,nodev
@@ -42,7 +42,7 @@ Partition  | master- Node (Control Plane) | worker- Node | Mount Options
 /home                20GB                   20GB       defaults,nodev,nosuid
 /data (Optional)     200GB (For PVs)        500GB+     defaults  (For local PVs) 
 swap                 0GB (Disabled)         0GB(Disabled)  swapoff
-
+```
 
 
 
