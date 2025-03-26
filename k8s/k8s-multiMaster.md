@@ -48,18 +48,20 @@ swap                 0GB (Disabled)         0GB(Disabled)  swapoff
 
 Step 1: Set Up Hostnames
 Assign hostnames to each node:
+```t
 # On master- Nodes
 sudo hostnamectl set-hostname master-1
 sudo hostnamectl set-hostname master-2
 sudo hostnamectl set-hostname master-3
-
+```
+```
 # On worker- Nodes
 sudo hostnamectl set-hostname worker-1
 sudo hostnamectl set-hostname worker-2
 sudo hostnamectl set-hostname worker-3
 sudo hostnamectl set-hostname worker-4
 sudo hostnamectl set-hostname worker-5
-
+```
 
 Step 2: Disable Swap & Firewall along with loading Kernel Modules
 ```
