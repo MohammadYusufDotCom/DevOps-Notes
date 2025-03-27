@@ -16,13 +16,13 @@ vrrp_instance RH_1 {
     virtual_router_id 50            ## Id that used for join other system (must be same across all the node) 
     priority 99                     ## the higher the prioprity the more chance to get selected for master ROLE (must be highest for master lower for slave)
     advert_int 1                    ## check intervel secondes for for master and and worked if master goes down OR comes up
-    unicast_src_ip 172.16.210.59    # IP address of Master Server
+    unicast_src_ip 192.168.1.1    # IP address of Master Server
     unicast_peer {
-    172.16.210.58                   # IP address of Slave Server
+    192.168.1.2                   # IP address of Slave Server
     }
 
     virtual_ipaddress {
-        172.16.210.57/24 dev enp1s0 ## VIP that assigned
+        192.168.1.15/24 dev enp1s0 ## VIP that assigned
     }
 }
 ```
