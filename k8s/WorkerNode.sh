@@ -94,7 +94,9 @@ while true; do
                         curl -LO https://github.com/opencontainers/runc/releases/download/v1.2.4/runc.amd64
                         sleep 3;
                         sudo install -m 755 runc.amd64 /usr/local/sbin/runc
-                        echo 'export PATH="$PATH:/usr/local/sbin"' >> ~/.bashrc
+                        
+                        #echo 'export PATH="$PATH:/usr/local/sbin"' >> ~/.bashrc
+                        sudo crictl config runtime-endpoint unix:///var/run/containerd/containerd.sock
                         echo -e "\n################################################## RUNC INSTALLED SUCCUSSFULLY ################################################\n"
 
                         while true; do 
