@@ -33,3 +33,11 @@ cat techops.csr|base64 | tr -d "\n"
 ```
 kubectl certificate approve <certificate-signing-request-name>
 ```
+
+✅ Step 4: Get your certificate by running below command
+```
+kubectl get csr techops -o jsonpath='{.status.certificate}' > certificate.crt
+
+cat certificate.crt
+```
+
