@@ -41,3 +41,63 @@ kubectl get csr techops -o jsonpath='{.status.certificate}' > certificate.crt
 cat certificate.crt
 ```
 
+✅ Step 5: Create below menifest for role base authentication
+
+```
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: role
+rules:
+  - verbs:
+      - list
+    apiGroups:
+      - ''
+    resources:
+      - namespaces
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: techops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mon
+  namespace: monitoring
+rules:
+  - verbs: ["get","watch","list"]
+    apiGroups: [""]
+    resources: ["pods","pods/log","pods/exec","events"]
+  - verbs: ["get","watch","list"]
+    apiGroups: ["apps"]
+    resources: ["deployments"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: role-binding
+  namespace: monitoring
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: techops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mon
+
+```
+
+
+
