@@ -22,3 +22,8 @@ docker load -i  xxx.tar
 ctr -n=k8s.io image export  xxx.tar  $imageList
 ctr -n=k8s.io image import  xxx.tar
 ```
+
+## Download images using a proxy server like squid with containerd
+```
+HTTPS_PROXY=http://<Proxyserver>:3128 ctr image pull quay.io/prometheus/prometheus:v2.51.0
+```
