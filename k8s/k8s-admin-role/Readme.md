@@ -28,3 +28,8 @@ spec:
 ```
 cat techops.csr|base64 | tr -d "\n"
 ```
+
+✅ Step 3: Approve your request 
+```
+kubectl certificate approve <certificate-signing-request-name>
+```
