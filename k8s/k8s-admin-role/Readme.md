@@ -23,3 +23,8 @@ spec:
   usages:
     - client auth
 ```
+
+✅ Step 3: Convert your csr in base64 
+```
+cat techops.csr|base64 | tr -d "\n"
+```
