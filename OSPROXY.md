@@ -37,3 +37,10 @@ proxy_password=your_password
 ```
  sudo yum install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
+
+```
+http_proxy="http://pub-instance:3128"
+https_proxy="http://pub-instance:3128"
+ftp_proxy="http://pub-instance:3128"
+no_proxy="localhost,127.0.0.1"
+```
