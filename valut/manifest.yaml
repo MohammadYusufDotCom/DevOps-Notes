@@ -1,0 +1,718 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-agent-injector
+  namespace: vault
+  uid: 1ee0d948-d621-430e-87e4-cbc04e58d181
+  resourceVersion: '2206393'
+  generation: 1
+  creationTimestamp: '2024-10-24T09:38:43Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault-agent-injector
+    component: webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: vault
+      app.kubernetes.io/name: vault-agent-injector
+      component: webhook
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: vault
+        app.kubernetes.io/name: vault-agent-injector
+        component: webhook
+    spec:
+      containers:
+        - name: sidecar-injector
+          image: hashicorp/vault-k8s:1.4.2
+          args:
+            - agent-inject
+            - 2>&1
+          env:
+            - name: AGENT_INJECT_LISTEN
+              value: ':8080'
+            - name: AGENT_INJECT_LOG_LEVEL
+              value: info
+            - name: AGENT_INJECT_VAULT_ADDR
+              value: http://vault.vault.svc:8200
+            - name: AGENT_INJECT_VAULT_AUTH_PATH
+              value: auth/kubernetes
+            - name: AGENT_INJECT_VAULT_IMAGE
+              value: hashicorp/vault:1.17.2
+            - name: AGENT_INJECT_TLS_AUTO
+              value: vault-agent-injector-cfg
+            - name: AGENT_INJECT_TLS_AUTO_HOSTS
+              value: >-
+                vault-agent-injector-svc,vault-agent-injector-svc.vault,vault-agent-injector-svc.vault.svc
+            - name: AGENT_INJECT_LOG_FORMAT
+              value: standard
+            - name: AGENT_INJECT_REVOKE_ON_SHUTDOWN
+              value: 'false'
+            - name: AGENT_INJECT_CPU_REQUEST
+              value: 250m
+            - name: AGENT_INJECT_CPU_LIMIT
+              value: 500m
+            - name: AGENT_INJECT_MEM_REQUEST
+              value: 64Mi
+            - name: AGENT_INJECT_MEM_LIMIT
+              value: 128Mi
+            - name: AGENT_INJECT_DEFAULT_TEMPLATE
+              value: map
+            - name: AGENT_INJECT_TEMPLATE_CONFIG_EXIT_ON_RETRY_FAILURE
+              value: 'true'
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          resources: {}
+          livenessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 2
+            successThreshold: 1
+            failureThreshold: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 2
+            successThreshold: 1
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 12
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            allowPrivilegeEscalation: false
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: vault-agent-injector
+      serviceAccount: vault-agent-injector
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: vault
+                  app.kubernetes.io/name: vault-agent-injector
+                  component: webhook
+              topologyKey: kubernetes.io/hostname
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vault
+  namespace: vault
+  uid: 463a1b56-71e8-452d-830b-76ff6fe1d2e3
+  resourceVersion: '79545605'
+  generation: 1
+  creationTimestamp: '2024-10-24T09:38:44Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: vault
+      app.kubernetes.io/name: vault
+      component: server
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: vault
+        app.kubernetes.io/name: vault
+        component: server
+        helm.sh/chart: vault-0.28.1
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: vault-config
+            defaultMode: 420
+        - name: home
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.17.2
+          command:
+            - /bin/sh
+            - '-ec'
+          args:
+            - >
+              cp /vault/config/extraconfig-from-values.hcl
+              /tmp/storageconfig.hcl;
+
+              [ -n "${HOST_IP}" ] && sed -Ei "s|HOST_IP|${HOST_IP?}|g"
+              /tmp/storageconfig.hcl;
+
+              [ -n "${POD_IP}" ] && sed -Ei "s|POD_IP|${POD_IP?}|g"
+              /tmp/storageconfig.hcl;
+
+              [ -n "${HOSTNAME}" ] && sed -Ei "s|HOSTNAME|${HOSTNAME?}|g"
+              /tmp/storageconfig.hcl;
+
+              [ -n "${API_ADDR}" ] && sed -Ei "s|API_ADDR|${API_ADDR?}|g"
+              /tmp/storageconfig.hcl;
+
+              [ -n "${TRANSIT_ADDR}" ] && sed -Ei
+              "s|TRANSIT_ADDR|${TRANSIT_ADDR?}|g" /tmp/storageconfig.hcl;
+
+              [ -n "${RAFT_ADDR}" ] && sed -Ei "s|RAFT_ADDR|${RAFT_ADDR?}|g"
+              /tmp/storageconfig.hcl;
+
+              /usr/local/bin/docker-entrypoint.sh vault server
+              -config=/tmp/storageconfig.hcl 
+          ports:
+            - name: http
+              containerPort: 8200
+              protocol: TCP
+            - name: https-internal
+              containerPort: 8201
+              protocol: TCP
+            - name: http-rep
+              containerPort: 8202
+              protocol: TCP
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: VAULT_K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: VAULT_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: VAULT_ADDR
+              value: http://127.0.0.1:8200
+            - name: VAULT_API_ADDR
+              value: http://$(POD_IP):8200
+            - name: SKIP_CHOWN
+              value: 'true'
+            - name: SKIP_SETCAP
+              value: 'true'
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: VAULT_CLUSTER_ADDR
+              value: https://$(HOSTNAME).vault-internal:8201
+            - name: HOME
+              value: /home/vault
+          resources: {}
+          volumeMounts:
+            - name: data
+              mountPath: /vault/data
+            - name: config
+              mountPath: /vault/config
+            - name: home
+              mountPath: /home/vault
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-ec'
+                - vault status -tls-skip-verify
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - '-c'
+                  - sleep 5 && kill -SIGTERM $(pidof vault)
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      dnsPolicy: ClusterFirst
+      serviceAccountName: vault
+      serviceAccount: vault
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: vault
+                  app.kubernetes.io/name: vault
+                  component: server
+              topologyKey: kubernetes.io/hostname
+      schedulerName: default-scheduler
+  serviceName: vault-internal
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: OnDelete
+  revisionHistoryLimit: 10
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config
+  namespace: vault
+  uid: b35387bd-135b-4781-92a2-5b250014ec1f
+  resourceVersion: '48048395'
+  creationTimestamp: '2024-10-24T09:38:39Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault
+    helm.sh/chart: vault-0.28.1
+    k8slens-edit-resource-version: v1
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"v1","data":{"extraconfig-from-values.hcl":"\ndisable_mlock
+      = true\nui = true\n\nlistener \"tcp\" {\n  tls_disable = 1\n  address =
+      \"[::]:8200\"\n  cluster_address = \"[::]:8201\"\n  # Enable
+      unauthenticated metrics access (necessary for Prometheus Operator)\n 
+      #telemetry {\n  #  unauthenticated_metrics_access = \"true\"\n 
+      #}\n}\n\n#storage \"file\" {\n#  path = \"/vault/data\"\n#}\n\n\nstorage
+      \"mysql\" {\n  username = \"llaadmin\"\n  password = \"llaadmin2024\"\n 
+      address =
+      \"rds-01-aws-lla-cco-super-app-paytm-prod-01.cpuccqq08opc.us-east-1.rds.amazonaws.com:3310\"\n 
+      database = \"vault\"\n}\n\nseal \"awskms\" {\n  kms_key_id =
+      \"3582d2df-8864-4466-ba54-a3c87814e01c\",\n  region = \"us-east-1\"\n}\n#
+      Example configuration for using auto-unseal, using Google Cloud KMS.
+      The\n# GKMS keys must already exist, and the cluster must have a service
+      account\n# that is authorized to access GCP KMS.\n#seal \"gcpckms\" {\n#  
+      project     = \"vault-helm-dev\"\n#   region      = \"global\"\n#  
+      key_ring    = \"vault-helm-unseal-kr\"\n#   crypto_key  =
+      \"vault-helm-unseal-key\"\n#}\n\n# Example configuration for enabling
+      Prometheus metrics in your config.\n#telemetry {\n# 
+      prometheus_retention_time = \"30s\"\n#  disable_hostname =
+      true\n#}"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault","helm.sh/chart":"vault-0.28.1"},"name":"vault-config","namespace":"vault"}}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: v1
+      time: '2024-10-24T09:38:39Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:data: {}
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+            f:helm.sh/chart: {}
+    - manager: node-fetch
+      operation: Update
+      apiVersion: v1
+      time: '2024-12-05T12:53:48Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:data:
+          f:extraconfig-from-values.hcl: {}
+        f:metadata:
+          f:labels:
+            f:k8slens-edit-resource-version: {}
+  selfLink: /api/v1/namespaces/vault/configmaps/vault-config
+data:
+  extraconfig-from-values.hcl: |-
+    disable_mlock = true
+    ui = true
+
+    max_lease_ttl = "9000h"
+    default_lease_ttl = "9000h"
+
+    listener "tcp" {
+      tls_disable = 1
+      address = "[::]:8200"
+      cluster_address = "[::]:8201"
+      # Enable unauthenticated metrics access (necessary for Prometheus Operator)
+      #telemetry {
+      #  unauthenticated_metrics_access = "true"
+      #}
+    }
+
+    #storage "file" {
+    #  path = "/vault/data"
+    #}
+
+
+    storage "mysql" {
+      username = "XXXXXXXX"
+      password = "XXXXXXXXX"
+      address = "192.168.1.1:3360"
+      database = "vault"
+    }
+
+    seal "awskms" {
+      kms_key_id = "3582d2df-8864-XXX-XXXX-XXXXXXXXX",
+      region = "us-east-1"
+    }
+    # Example configuration for using auto-unseal, using Google Cloud KMS. The
+    # GKMS keys must already exist, and the cluster must have a service account
+    # that is authorized to access GCP KMS.
+    #seal "gcpckms" {
+    #   project     = "vault-helm-dev"
+    #   region      = "global"
+    #   key_ring    = "vault-helm-unseal-kr"
+    #   crypto_key  = "vault-helm-unseal-key"
+    #}
+
+    # Example configuration for enabling Prometheus metrics in your config.
+    #telemetry {
+    #  prometheus_retention_time = "30s"
+    #  disable_hostname = true
+    #}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: vault
+  uid: a382f6d8-0d53-4e27-8e74-f1f49aaea38c
+  resourceVersion: '2206321'
+  creationTimestamp: '2024-10-24T09:38:43Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault
+    helm.sh/chart: vault-0.28.1
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault","helm.sh/chart":"vault-0.28.1"},"name":"vault","namespace":"vault"},"spec":{"ports":[{"name":"http","port":8200,"targetPort":8200},{"name":"https-internal","port":8201,"targetPort":8201}],"publishNotReadyAddresses":true,"selector":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/name":"vault","component":"server"}}}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: v1
+      time: '2024-10-24T09:38:43Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+            f:helm.sh/chart: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":8200,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":8201,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:publishNotReadyAddresses: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  selfLink: /api/v1/namespaces/vault/services/vault
+status:
+  loadBalancer: {}
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8200
+      targetPort: 8200
+    - name: https-internal
+      protocol: TCP
+      port: 8201
+      targetPort: 8201
+  selector:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/name: vault
+    component: server
+  clusterIP: 172.20.55.53
+  clusterIPs:
+    - 172.20.55.53
+  type: ClusterIP
+  sessionAffinity: None
+  publishNotReadyAddresses: true
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-agent-injector-binding
+  uid: 13525d5a-6d7a-4509-9884-dbe8caa7eb03
+  resourceVersion: '2206299'
+  creationTimestamp: '2024-10-24T09:38:40Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault-agent-injector
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRoleBinding","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault-agent-injector"},"name":"vault-agent-injector-binding"},"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"ClusterRole","name":"vault-agent-injector-clusterrole"},"subjects":[{"kind":"ServiceAccount","name":"vault-agent-injector","namespace":"vault"}]}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: rbac.authorization.k8s.io/v1
+      time: '2024-10-24T09:38:40Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+        f:roleRef: {}
+        f:subjects: {}
+  selfLink: >-
+    /apis/rbac.authorization.k8s.io/v1/clusterrolebindings/vault-agent-injector-binding
+subjects:
+  - kind: ServiceAccount
+    name: vault-agent-injector
+    namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-agent-injector-clusterrole
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-server-binding
+  uid: 91ccd709-1f8b-4550-b3ca-d6ed9e5f6df6
+  resourceVersion: '2206302'
+  creationTimestamp: '2024-10-24T09:38:40Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault
+    helm.sh/chart: vault-0.28.1
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRoleBinding","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault","helm.sh/chart":"vault-0.28.1"},"name":"vault-server-binding"},"roleRef":{"apiGroup":"rbac.authorization.k8s.io","kind":"ClusterRole","name":"system:auth-delegator"},"subjects":[{"kind":"ServiceAccount","name":"vault","namespace":"vault"}]}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: rbac.authorization.k8s.io/v1
+      time: '2024-10-24T09:38:40Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+            f:helm.sh/chart: {}
+        f:roleRef: {}
+        f:subjects: {}
+  selfLink: /apis/rbac.authorization.k8s.io/v1/clusterrolebindings/vault-server-binding
+subjects:
+  - kind: ServiceAccount
+    name: vault
+    namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-agent-injector-clusterrole
+  uid: 7d737d5b-c3c9-4e55-b0db-b7c38ea8676a
+  resourceVersion: '2206297'
+  creationTimestamp: '2024-10-24T09:38:39Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault-agent-injector
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRole","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault-agent-injector"},"name":"vault-agent-injector-clusterrole"},"rules":[{"apiGroups":["admissionregistration.k8s.io"],"resources":["mutatingwebhookconfigurations"],"verbs":["get","list","watch","patch"]}]}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: rbac.authorization.k8s.io/v1
+      time: '2024-10-24T09:38:39Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+        f:rules: {}
+  selfLink: >-
+    /apis/rbac.authorization.k8s.io/v1/clusterroles/vault-agent-injector-clusterrole
+rules:
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+    apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-agent-injector
+  namespace: vault
+  uid: 0c585983-144b-4d09-b94c-fa1abe580bc2
+  resourceVersion: '2206286'
+  creationTimestamp: '2024-10-24T09:38:37Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault-agent-injector
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"v1","kind":"ServiceAccount","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault-agent-injector"},"name":"vault-agent-injector","namespace":"vault"}}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: v1
+      time: '2024-10-24T09:38:37Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+  selfLink: /api/v1/namespaces/vault/serviceaccounts/vault-agent-injector
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault
+  namespace: vault
+  uid: d44f73a0-0853-4666-9648-4a5c3fbf9b77
+  resourceVersion: '2206289'
+  creationTimestamp: '2024-10-24T09:38:38Z'
+  labels:
+    app.kubernetes.io/instance: vault
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vault
+    helm.sh/chart: vault-0.28.1
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"v1","kind":"ServiceAccount","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"vault","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"vault","helm.sh/chart":"vault-0.28.1"},"name":"vault","namespace":"vault"}}
+  managedFields:
+    - manager: kubectl-client-side-apply
+      operation: Update
+      apiVersion: v1
+      time: '2024-10-24T09:38:38Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/name: {}
+            f:helm.sh/chart: {}
+  selfLink: /api/v1/namespaces/vault/serviceaccounts/vault
