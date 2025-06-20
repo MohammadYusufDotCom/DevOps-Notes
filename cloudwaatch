@@ -1,0 +1,12 @@
+yum install amazon-cloudwatch-agent
+
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+or
+aws s3 cp s3://lla-prod-backup/cloudwacth-agent-config/config.json /opt/aws/amazon-cloudwatch-agent/bin/
+
+
+
+mkdir -p /usr/share/collectd/
+touch /usr/share/collectd/types.db
+amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+systemctl status amazon-cloudwatch-agent
