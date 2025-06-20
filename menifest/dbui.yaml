@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbeaver
+  namespace: db-ui
+  uid: b42c1128-c7f9-4b53-a2b5-a1130cd4fd86
+  resourceVersion: '77185110'
+  generation: 3
+  creationTimestamp: '2024-11-21T13:52:50Z'
+  labels:
+    k8slens-edit-resource-version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dbeaver
+      tier: ui
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: dbeaver
+        tier: ui
+    spec:
+      volumes:
+        - name: dbeaver-volume
+          hostPath:
+            path: /LLA_LOG/LLA_DATA/log
+            type: DirectoryOrCreate
+      containers:
+        - name: dbeaver
+          image: dbeaver/cloudbeaver
+          ports:
+            - name: http
+              containerPort: 8978
+              protocol: TCP
+          env:
+            - name: CB_DB_HOST
+              value: your_database_host
+            - name: CLOUDBEAVER_RESOURCE_QUOTA_DATA_EXPORT_FILE_SIZE_LIMIT
+              value: '500000000'
+          resources: {}
+          volumeMounts:
+            - name: dbeaver-volume
+              mountPath: /opt/cloudbeaver/workspace
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
