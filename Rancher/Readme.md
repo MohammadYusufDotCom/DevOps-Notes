@@ -175,5 +175,5 @@ helm install rancher rancher-stable/rancher --version 2.11.3 --set hostname=poc.
 
 ```
 ## Load balancer rafrance guide for rancher with Nginx
-https://ranchermanager.docs.rancher.com/how-to-guides/advanced-user-guides/configure-layer-7-nginx-load-balancer#:~:text=When%20Rancher%20is%20installed%20with,%2Fvar%2Flib%2Francher%20.&text=This%20operation%20requires%20privileged%20access,)%20and%201.14%20(stable).
+[rancher document list](https://ranchermanager.docs.rancher.com/how-to-guides/advanced-user-guides/configure-layer-7-nginx-load-balancer#:~:text=When%20Rancher%20is%20installed%20with,%2Fvar%2Flib%2Francher%20.&text=This%20operation%20requires%20privileged%20access,)%20and%201.14%20(stable).)
 ```
