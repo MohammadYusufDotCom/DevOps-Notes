@@ -1,0 +1,4 @@
+use below doc for grafana with promteil and loki 
+https://ozwizard.medium.com/setting-up-loki-and-promtail-for-postgresql-log-monitoring-3255ea877390
+
+https://medium.com/@neupaneakrur11/configuring-promtail-and-loki-for-log-aggregation-with-nginx-logs-96fc3577e063
