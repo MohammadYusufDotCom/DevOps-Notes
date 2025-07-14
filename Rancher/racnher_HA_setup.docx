@@ -1,0 +1,324 @@
+Rancher HA Setup with K3s, NGINX Load Balancer, External MySQL & Keepalived VIP 
+
+ 
+
+📌 Overview 
+
+This document describes how to install Rancher in High Availability mode using: 
+
+K3s with an external MySQL backend 
+
+Two NGINX nodes for load balancing and reverse proxy 
+
+A VIP (Virtual IP) setup with Keepalived 
+
+Cert-manager and Helm for TLS and Rancher installation 
+
+ 
+
+🧱 Architecture 
+
++------------------+                       +------------------+ 
+|  NGINX Node 1    |                       |  NGINX Node 2    | 
+|  (Keepalived)    |<-- VIP (Keepalived)-->|  (Keepalived)    | 
++--------+---------+                       +--------+---------+ 
+         |                                          | 
+         v                                          v 
++------------------+                       +------------------+ 
+|   K3s Server 1   |                       |   K3s Server 2   | 
++------------------+                       +------------------+ 
+                     \                   / 
+                      \                 / 
+                       \               / 
+                      +-----------------+ 
+                      |  MySQL Server   | 
+                      +-----------------+ 
+ 
+1. 🐬 Setup External MySQL Server (Docker) 
+
+ 
+
+# Install Docker 
+
+ 
+
+     Follow the document for docker installation Install | Docker Docs 
+ 
+# Install docker-compose 
+
+ 
+sudo curl –L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose 
+ 
+	sudo chmod +x /usr/local/bin/docker-compose 
+
+ 
+
+# MySQL volume and Docker Compose 
+
+ 
+sudo mkdir -p /mysql/data 
+
+ 
+cat <<EOF > ~/docker-compose.yml 
+version: '3.8' 
+services: 
+  mysql: 
+    image: mysql:8.0 
+    container_name: rancher-mysql 
+    restart: unless-stopped 
+    environment: 
+      MYSQL_ROOT_PASSWORD: admin@123 
+      MYSQL_DATABASE: rancher 
+      MYSQL_USER: rancher 
+      MYSQL_PASSWORD: rancher123 
+    ports: 
+      - "3306:3306" 
+    volumes: 
+      - /mysql/data:/var/lib/mysql 
+    command: --default-authentication-plugin=mysql_native_password 
+
+EOF 
+
+ 
+
+# Start MySQL 
+
+ 
+sudo docker-compose up –d 
+
+Sudo Docker ps 
+
+ 
+
+2. 🚀 Install K3s on First Server 
+
+# Run the below script fot k3s installatin 
+
+  
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enX0 --advertise-address=VIP_FOR_NGINX_HA" \ 
+K3S_DATASTORE_ENDPOINT="mysql://rancher:rancher123@tcp(<MYSQL-IP>:3306)/rancher" sh - 
+ 
+
+📌 Get K3s token: 
+
+   cat /var/lib/rancher/k3s/server/token 
+
+ 
+
+3. ➕ Join Additional K3s Server(s) 
+
+# Run below commands to join another master server 
+
+ 
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enX0" \ 
+K3S_DATASTORE_ENDPOINT="mysql://rancher:rancher123@tcp(<MYSQL-IP>:3306)/rancher" \ 
+sh -s - --server https://VIP_FOR_NGINX_HA:6443 --token '<token_from_first_server>' 
+ 
+Note:  
+
+Please VIP_FOR_NGINX_HA with Actual VIP 
+
+Also changes the token 
+
+4. 🧩 Configure kubectl and Install Helm 
+
+# Run below commands for configure kubeconfig file 
+
+ 
+
+mkdir -p ~/.kube 
+cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 
+chmod 755 ~/.kube/config 
+
+ 
+
+# Install Helm 
+
+wget https://get.helm.sh/helm-v3.18.4-linux-amd64.tar.gz 
+tar -xvzf helm-*-linux-amd64.tar.gz 
+sudo mv linux-amd64/helm /usr/local/bin/ 
+chmod 755 /usr/local/bin/helm 
+ 
+
+ 
+
+5. 🔐 Install Cert-Manager 
+
+# Install cert-manager using below command 
+
+ 
+
+helm repo add jetstack https://charts.jetstack.io --force-update 
+ 
+helm install cert-manager jetstack/cert-manager \ 
+  --namespace cert-manager \ 
+  --create-namespace \ 
+  --version v1.18.2 \ 
+  --set crds.enabled=true 
+ 
+
+# Verify 
+
+kubectl get all -n cert-manager 
+ 
+if everything is working fine then we can proceed for further 
+
+6. 🐮 Install Rancher via Helm 
+
+# Add helm repo and install the rancher stable version using the helm 
+
+ 
+
+helm repo add rancher-stable https://releases.rancher.com/server-charts/stable --force-update 
+ 
+
+# With domain 
+
+ 
+
+helm install rancher rancher-stable/rancher \ 
+  --version 2.11.3 \ 
+  --set hostname=poc.rancher.yusuf \ 
+  --namespace cattle-system \ 
+  --create-namespace 
+
+🎯 Replace: 
+
+If you have special domain for accessing the rancher UI then use –set hostname flag  
+
+ 
+
+ 
+
+# Verify the installation 
+
+ 
+kubectl get po -n cattle-system 
+ 
+
+ 
+
+7. 🌐 Configure NGINX Reverse Proxy 
+
+Install NGINX 
+
+sudo apt update && sudo apt install nginx -y 
+
+NGINX Config Example 
+
+upstream backend_servers { 
+    least_conn; 
+    server 192.168.0.1:443 max_fails=3 fail_timeout=30s; 
+    server 192.168.0.2:433 max_fails=3 fail_timeout=30s; 
+} 
+ 
+map $http_upgrade $connection_upgrade { 
+    default Upgrade; 
+    ''      close; 
+} 
+ 
+server { 
+    listen 80; 
+    server_name 192.168.0.143; 
+    return 301 https://$host$request_uri; 
+} 
+ 
+server { 
+    listen 443 ssl; 
+    server_name a.yusuf.com; 
+ 
+    ssl_certificate /etc/nginx/ssl/selfsigned_with_ca.crt; 
+    ssl_certificate_key /etc/nginx/ssl/selfsigned.key; 
+ 
+    location / { 
+        proxy_pass https://backend_servers; 
+        proxy_set_header Host $host; 
+        proxy_set_header X-Real-IP $remote_addr; 
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; 
+        proxy_set_header X-Forwarded-Proto $scheme; 
+        proxy_redirect off; 
+    } 
+} 
+ 
+
+ 
+
+8. 🛡️ Keepalived Configuration (VIP) 
+
+📦 Install Keepalived 
+
+sudo apt update && sudo apt install keepalived -y 
+ 
+
+🔧 /etc/keepalived/keepalived.conf on NGINX Node 1 (MASTER) 
+
+vrrp_instance VI_1 { 
+    state MASTER 
+    interface eth0 
+    virtual_router_id 51 
+    priority 101 
+    advert_int 1 
+    authentication { 
+        auth_type PASS 
+        auth_pass secret123 
+    } 
+    virtual_ipaddress { 
+        192.168.0.200 
+    } 
+} 
+ 
+
+On NGINX Node 2 (BACKUP) 
+
+vrrp_instance VI_1 { 
+    state BACKUP 
+    interface eth0 
+    virtual_router_id 51 
+    priority 100 
+    advert_int 1 
+    authentication { 
+        auth_type PASS 
+        auth_pass secret123 
+    } 
+    virtual_ipaddress { 
+        192.168.0.200 
+    } 
+} 
+ 
+
+🎯 Replace: 
+
+eth0 with your network interface (use ip a to check) 
+
+192.168.0.200 with your desired VIP 
+
+🧪 Start and Enable Keepalived 
+
+sudo systemctl enable keepalived 
+sudo systemctl start keepalived 
+ 
+
+#Check VIP: 
+
+ip a | grep 192.168.0.200 
+ 
+
+ 
+
+✅ Final Checklist 
+
+MySQL container running and accessible 
+
+K3s installed on all servers with external DB 
+
+VIP configured using Keepalived and reachable 
+
+NGINX reverse proxy configured with certs 
+
+Helm, cert-manager, and Rancher installed 
+
+Access Rancher via https://<your-vip-or-domain> 
+
+ 
+
+ 
